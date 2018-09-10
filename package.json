@@ -1,0 +1,31 @@
+{
+  "name": "vue-cli-plugin-ethers",
+  "description": "Ethereum ethers.js vuex store module generator plugin for vue-cli 3",
+  "version": "0.1",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bmiller59/vue-cli-plugin-ethers"
+  },
+  "bugs": {
+    "url": "https://github.com/bmiller59/vue-cli-plugin-ethers/issues"
+  },
+  "homepage": "https://github.com/bmiller59/vue-cli-plugin-ethers#readme",
+  "author": "Brendan Miller <code+os@brendanmiller.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "ethereum",
+    "ethers",
+    "web3",
+    "vuex",
+    "store",
+    "vue",
+    "cli",
+    "plugin"
+  ],
+  "dependencies": {},
+  "devDependencies": {}
+}
