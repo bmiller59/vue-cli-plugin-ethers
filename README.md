@@ -5,7 +5,7 @@
     <img alt="" src="https://img.shields.io/npm/dm/vue-cli-plugin-ethers.svg?style=flat-square">
 </a>
 
-#PRE-ALPHA. Still in testing phase. Do not use yet! ;)
+# PRE-ALPHA. Still in testing phase. Do not use yet! ;)
 
 # Ethereum ethers.js vuex store module generator plugin for vue-cli 3
 
