@@ -32,7 +32,9 @@ module.exports = (api, options, rootOptions) => {
 
     api.extendPackage({
         dependencies: {
-          ethers: "^3.0.27"
+          ethers: "^3.0.27",
+          'es6-promisify': '^6.0.0',
+          'p-timeout': '^2.0.1'
         }
       });
 

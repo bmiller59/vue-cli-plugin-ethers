@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bmiller59/vue-cli-plugin-ethers"
+    "url": "git+https://github.com/bmiller59/vue-cli-plugin-ethers"
   },
   "bugs": {
     "url": "https://github.com/bmiller59/vue-cli-plugin-ethers/issues"
