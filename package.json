@@ -24,7 +24,8 @@
     "store",
     "vue",
     "cli",
-    "plugin"
+    "plugin",
+    "dapp"
   ],
   "dependencies": {},
   "devDependencies": {}
