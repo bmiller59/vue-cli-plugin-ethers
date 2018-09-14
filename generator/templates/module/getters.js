@@ -1,2 +1,2 @@
-export default {
-}
+/* eslint-disable */
+export default {}
