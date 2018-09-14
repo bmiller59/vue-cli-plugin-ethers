@@ -42,14 +42,14 @@ This plugin comes with the following example code enabled so you can see how thi
 - Install via vue-cli
 
 ```sh
-$ vue add vue-cli-plugin-vuex-ethers
+$ vue add vue-cli-plugin-ethers
 ```
 
 - Invoke to generate the ethers.js ethereum connection vuex module:
 
 ```sh
-$ vue invoke vue-cli-plugin-vuex-ethers
-? Where's your store's root directory? ./src/store
+$ vue invoke vue-cli-plugin-ethers
+? Where is the root directory of your store? ./src/store
 ? What would you like to name the module? ethers
 ```
 
