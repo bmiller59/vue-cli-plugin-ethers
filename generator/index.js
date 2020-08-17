@@ -4,11 +4,13 @@ const path = require('path');
 module.exports = (api, options, rootOptions) => {
   const {
     moduleName,
-    storeRootDir
+    storeRootDir,
+    mainJsDir
   } = options;
   const templatesRoot = './templates';
   const moduleDirPath = path.join(storeRootDir, moduleName);
   const storeRootPath = path.join(storeRootDir, 'index.js');
+  const mainJsPath = path.join(mainJsDir, 'main.js');
 
   // Abort if module already exists
   if (fs.existsSync(moduleDirPath)) {
@@ -32,10 +34,8 @@ module.exports = (api, options, rootOptions) => {
 
   api.extendPackage({
     dependencies: {
-      vuex: '^3.0.1',
-      ethers: "^3.0.27",
-      'es6-promisify': '^6.0.0',
-      'p-timeout': '^2.0.1'
+      vuex: '^3.5.1',
+      ethers: '^5.0.8'
     }
   });
 
@@ -74,12 +74,18 @@ module.exports = (api, options, rootOptions) => {
           }
         }
       }
-
-      const exportStartIndex = lines.findIndex(line => line.match(/export/));
-      const initInsertIndex = exportStartIndex >= 0 ? exportStartIndex : lines.length
-      lines.splice(initInsertIndex,0,`store.dispatch('ethers/init')\n`)
-
       files[storeRootPath] = lines.join('\n');
     }
+  })
+
+
+  api.onCreateComplete(() => {
+    // augment main.js to init ethers store
+    let contentMain = fs.readFileSync(mainJsPath, { encoding: 'utf-8' })
+    const linesMain = contentMain.split(/\r?\n/g)
+    linesMain.push('\n// Initialize ethers store')
+    linesMain.push(`store.dispatch('ethers/init')\n`)
+    contentMain = linesMain.join('\n')
+    fs.writeFileSync(mainJsPath, contentMain, { encoding: 'utf-8' })
   })
 }

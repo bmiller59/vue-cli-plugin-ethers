@@ -1,226 +1,238 @@
 /* eslint-disable */
-import Vue from 'vue';
+import Vue from 'vue'
 import {
   providers,
-  Wallet,
   Contract as ContractModule,
   utils as utilsModule
-} from 'ethers';
-import {
-  promisify
-} from 'es6-promisify';
-import pTimeout from 'p-timeout';
+} from 'ethers'
 
-export const ACCOUNT_CHECK_MS = 200;
-export const WEB3_TIMEOUT = 60 * 1000;
+export const ACCOUNT_CHECK_MS = 2000
+export const ETHEREUM_TIMEOUT = 60 * 1000
 // networks where ens exists
 // Mainet, Ropsten, Ropsten
-export const ENS_NETS = [1, 3, 4];
-export const PROVIDER_TYPE = 'web3';
+export const ENS_NETS = [1, 3, 4]
+export const PROVIDER_TYPE = 'ethereum'
 
 // messages
 export const MSGS = {
+  NOT_CONNECTED: 'Not connected to Ethereum network',
   NOT_READY: 'Ethereum network not ready',
   NO_WALLET: 'No Ethereum wallet detected',
-  NETWORK_TIMEOUT: 'Ethereum network timeout',
-  INVALID_PROVIDER: 'Invalid provider type',
   ACCOUNT_CHANGED: 'Ethereum account changed',
   ETHERS_VUEX_INITIALIZED: 'Ethers vuex module initialized',
   ETHERS_VUEX_READY: 'Ethers vuex module ready'
 }
-export const EVENT_CHANNEL = 'ethers';
+export const EVENT_CHANNEL = 'ethers'
 // use vue as a simple event channel
-export const event = new Vue();
+export const event = new Vue()
 // expose ethers modules
-export const utils = utilsModule;
-export const Contract = ContractModule;
+export const utils = utilsModule
+export const Contract = ContractModule
 
 // ethereum transactions to log
 // More information: https://docs.ethers.io/ethers.js/html/api-providers.html#events
 export const LOG_TRANSACTIONS = [
-  'block',
+  'block'
   // can also be an address or transaction hash
-  //[] // list of topics, empty for all topics
-];
+  // [] // list of topics, empty for all topics
+]
 
 // for ethers
-let web3Provider;
-let userWallet;
-let providerInterval;
-let initialized;
+let ethereum
+let provider
+let chainId
+let userWallet
+let currentAccount
+let providerInterval
+let initialized
 
-// web3 can be located in one of two places
-export function getWeb3() {
-  return window.ethereumProvider || window.web3;
+function getEthereum () {
+  return window.ethereum
 }
 
-// checks for a connected web3 account
-export function web3Account() {
-  const web3 = getWeb3();
-  return web3 && web3.eth && web3.eth.accounts && web3.eth.accounts[0];
-}
-
-// checks if web3 is present and connected
-export function web3Ok() {
-  const web3 = getWeb3(); // micro metamask injected web3 to bootstrap from
-  const ok = web3 && web3.isConnected && web3.isConnected() && web3.currentProvider;
-  return ok;
+function ethereumOk () {
+  const em = getEthereum()
+  return em && em.isConnected()
 }
 
 // get the name of this network
-export async function getNetName() {
-  const nId = await netId();
-
-  switch (nId) {
-    case '1':
+export async function getNetName () {
+  switch (chainId) {
+    case '0x1':
       return 'Mainnet';
-    case '2':
-      return 'Morden (deprecated)';
-    case '3':
-      return 'Ropsten';
-    case '4':
-      return 'Rinkeby';
-    case '42':
-      return 'Kovan';
-      // if you give your ganache an id your can detect it here if you want
+    case '0x2':
+      return 'Morden (deprecated)'
+    case '0x3':
+      return 'Ropsten Test Network'
+    case '0x4':
+      return 'Rinkeby Test Network'
+    case '0x5':
+      return 'Goerli Test Network'
+    case '0x2a':
+      return 'Kovan Test Network';
+    case undefined:
+    case null:
+      return 'No Chain!'
+    // if you give your ganache an id your can detect it here if you want
     default:
-      return 'Unknown';
-  }
-}
-
-// get network id only for web3
-async function netId(display) {
-  if (!web3Ok()) throw new Error(MSGS.NOT_READY);
-  try {
-    return await pTimeout(promisify(web3.version.getNetwork)(), WEB3_TIMEOUT);
-  } catch (err) {
-    throw new Error(MSGS.NETWORK_TIMEOUT);
+      return 'Unknown'
   }
 }
 
 // if this net has ens
-export async function hasEns() {
-  let nId = await netId();
-  return ENS_NETS.includes(nId);
+export async function hasEns () {
+  return ENS_NETS.includes(chainId)
 }
 
 // get deployed address for a contract from its networks object and current network id or null
-export async function getNetworkAddress(networks) {
-  const net = await netId();
-  if (!networks[net] || !networks[net].address) return null;
-  return networks[net].address;
+export async function getNetworkAddress (networks) {
+  if (!networks[chainId] || !networks[chainId].address) return null
+  return networks[chainId].address
 }
 
-// stop interval looking for web3 provider changes
-export async function stopWatchProvider() {
-  if (providerInterval) clearInterval(providerInterval);
-  providerInterval = null;
+export function getProvider () {
+  return provider
 }
 
-const createProvider = {
-  web3: async () => {
-    if (!web3Ok()) throw new Error(MSGS.NOT_READY);
-    return new providers.Web3Provider(web3.currentProvider /*, nId*/ );
-  }
-  // could be extended
-};
-
-const walletFns = {
-  web3: async () => {
-    if (!web3Provider) throw new Error(MSGS.NOT_READY);
-    if (!web3Account()) throw new Error(MSGS.NO_WALLET);
-    const accounts = await web3Provider.listAccounts();
-    return web3Provider.getSigner(accounts[0]);
-  }
-  // could be extended
-};
-
-async function _getWallet() {
-  if (!walletFns[PROVIDER_TYPE]) throw new Error(MSGS.INVALID_PROVIDER + ' ' + PROVIDER_TYPE);
-  userWallet = await walletFns[PROVIDER_TYPE]();
-  return userWallet;
+export function getWallet () {
+  return userWallet
 }
 
+export async function getWalletAddress () {
+  const addr = userWallet && await userWallet.getAddress()
+  return addr
+}
 
-export async function startProviderWatcher() {
-  let account;
+export function ready () {
+  return !!provider && !!userWallet
+}
 
-  async function updateProvider() {
-    if (!account) {
-      userWallet = null;
-      event.$emit(EVENT_CHANNEL, MSGS.NO_WALLET);
-      return;
-    };
-    web3Provider = null; // while working...
-    if (!createProvider[PROVIDER_TYPE]) throw new Error(msgs.ethers.invalidProvider + ' ' + PROVIDER_TYPE);
-    try {
-      // try to update provider
-      web3Provider = await pTimeout(createProvider[PROVIDER_TYPE](), WEB3_TIMEOUT);
-      try {
-        await _getWallet();
-      } catch (err) {
-        throw new Error(MSGS.NO_WALLET);
-      }
-      event.$emit(EVENT_CHANNEL, MSGS.ACCOUNT_CHANGED);
-      // display our attached network
-      const nId = await netId(true);
-      // set up loggers if desired
-      if (LOG_TRANSACTIONS.length) {
-        for (let log of LOG_TRANSACTIONS) {
-          web3Provider.on(log, msg => console.log('Example ethereum event log. Configure "LOG_TRANSACTIONS" array for more or less', (Array.isArray(log) ? 'topics' : ''), (log.length ? log : '*'), ' -> ', msg));
-        }
-      }
-    } catch (err) {
-      throw err;
-    }
+export async function startProviderWatcher () {
+  // this should only be run when a ethereum provider is detected and set at the ethereum value above
+  async function updateProvider () {
+    ethereum = getEthereum()
+    if (!ethereum) return
+    // set ethers provider
+    provider = new providers.Web3Provider(ethereum)
+    initialized = true
+
+    // this is modeled after EIP-1193 example provided by MetaMask for clarity and consistency
+    // but works for all EIP-1193 compatible ethereum providers
+    // https://docs.metamask.io/guide/ethereum-provider.html#using-the-provider
+
+    /**********************************************************/
+    /* Handle chain (network) and chainChanged (per EIP-1193) */
+    /**********************************************************/
+
+    // Normally, we would recommend the 'eth_chainId' RPC method, but it currently
+    // returns incorrectly formatted chain ID values.
+    chainId = ethereum.chainId
+
+    ethereum.on('chainChanged', handleChainChanged)
+
+    /***********************************************************/
+    /* Handle user accounts and accountsChanged (per EIP-1193) */
+    /***********************************************************/
+
+    ethereum
+      .request({ method: 'eth_accounts' })
+      .then(handleAccountsChanged)
+      .catch((err) => {
+        // Some unexpected error.
+        // For backwards compatibility reasons, if no accounts are available,
+        // eth_accounts will return an empty array.
+        console.error('Error requesting ethereum accounts', err)
+        event.$emit(EVENT_CHANNEL, MSGS.NO_WALLET)
+      })
+
+    // Note that this event is emitted on page load.
+    // If the array of accounts is non-empty, you're already
+    // connected.
+    ethereum.on('accountsChanged', handleAccountsChanged)
   }
 
-  function checkProvider() {
-    if (!web3Ok()) {
-      account = null;
-      web3Provider = null;
-      userWallet = null;
-      event.$emit(EVENT_CHANNEL, MSGS.NOT_READY);
-      return;
-    }
-    const newAccount = web3Account();
-    if (newAccount !== account || !initialized) {
-      account = newAccount;
-      initialized = true;
-      updateProvider();
+  function checkProvider () {
+    // handle changes of availability of ethereum provider
+    if (ethereum && !ethereumOk()) {
+      ethereum = null
+      provider = null
+      chainId = null
+      currentAccount = null
+      userWallet = null
+      event.$emit(EVENT_CHANNEL, MSGS.NOT_READY)
+    } else if (!ethereum && ethereumOk()) {
+      updateProvider()
     }
   }
 
   // kick it off now
-  checkProvider();
+  checkProvider()
   // and set interval
-  providerInterval = setInterval(checkProvider, ACCOUNT_CHECK_MS);
+  providerInterval = setInterval(checkProvider, ACCOUNT_CHECK_MS)
 }
 
-export function getProvider() {
-  return web3Provider;
+function handleChainChanged (_chainId) {
+  // We recommend reloading the page, unless you must do otherwise
+  console.log('Ethereum chain changed. Reloading as recommended.')
+  chainId = _chainId
+  window.location.reload()
 }
 
-export function getWallet() {
-  return userWallet;
+// For now, 'eth_accounts' will continue to always return an array
+function handleAccountsChanged (accounts) {
+  if (accounts.length === 0) {
+    // MetaMask is locked or the user has not connected any accounts
+    console.log('No ethereum accounts available')
+    event.$emit(EVENT_CHANNEL, MSGS.NO_WALLET)
+  } else if (accounts[0] !== currentAccount) {
+    currentAccount = accounts[0]
+    userWallet = provider && provider.getSigner(currentAccount)
+    event.$emit(EVENT_CHANNEL, MSGS.ACCOUNT_CHANGED)
+  }
 }
 
-export async function getWalletAddress() {
-  const addr = (userWallet.getAddress && await userWallet.getAddress()) || userWallet.address;
-  return addr;
+/*********************************************/
+/* Access the user's accounts (per EIP-1102) */
+/*********************************************/
+
+// You should only attempt to request the user's accounts in response to user
+// interaction, such as a button click.
+// Otherwise, you popup-spam the user like it's 1999.
+// If you fail to retrieve the user's account(s), you should encourage the user
+// to initiate the attempt.
+// document.getElementById('connectButton', connect)
+
+export function connect () {
+  if (!ethereum) return event.$emit(EVENT_CHANNEL, MSGS.NOT_CONNECTED)
+  ethereum
+    .request({ method: 'eth_requestAccounts' })
+    .then(handleAccountsChanged)
+    .catch((err) => {
+      if (err.code === 4001) {
+        // EIP-1193 userRejectedRequest error
+        // If this happens, the user rejected the connection request.
+        console.log('Please connect to Ethereum wallet')
+        event.$emit(EVENT_CHANNEL, MSGS.NOT_READY)
+      } else {
+        console.error('Error requesting Ethereum connection/accounts', err)
+        event.$emit(EVENT_CHANNEL, MSGS.NOT_READY)
+      }
+      event.$emit(EVENT_CHANNEL, MSGS.ACCOUNT_CHANGED)
+    })
 }
 
-export function ready() {
-  return !!web3Provider && !!userWallet;
+// stop interval looking for ethereum provider changes
+export async function stopWatchProvider () {
+  if (providerInterval) clearInterval(providerInterval)
+  providerInterval = null
 }
 
-// start web3 account/provider checker
-// since web3 does not yet have events! :( Doh...
-startProviderWatcher();
+// start ethereum provider checker
+startProviderWatcher()
 
 export default {
-  web3Ok,
-  netId,
+  connect,
+  ethereumOk,
   getNetName,
   hasEns,
   getProvider,
