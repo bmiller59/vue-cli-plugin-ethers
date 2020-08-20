@@ -6,12 +6,10 @@ import {
   utils as utilsModule
 } from 'ethers'
 
-export const ACCOUNT_CHECK_MS = 2000
-export const ETHEREUM_TIMEOUT = 60 * 1000
+export const PROVIDER_CHECK_MS = 500
 // networks where ens exists
 // Mainet, Ropsten, Ropsten
-export const ENS_NETS = [1, 3, 4]
-export const PROVIDER_TYPE = 'ethereum'
+export const ENS_NETS = ['0x1', '0x3', '0x4']
 
 // messages
 export const MSGS = {
@@ -46,17 +44,17 @@ let currentAccount
 let providerInterval
 let initialized
 
-function getEthereum () {
+function getEthereum() {
   return window.ethereum
 }
 
-function ethereumOk () {
+function ethereumOk() {
   const em = getEthereum()
   return em && em.isConnected()
 }
 
 // get the name of this network
-export async function getNetName () {
+export async function getNetName() {
   switch (chainId) {
     case '0x1':
       return 'Mainnet';
@@ -80,78 +78,77 @@ export async function getNetName () {
 }
 
 // if this net has ens
-export async function hasEns () {
+export async function hasEns() {
   return ENS_NETS.includes(chainId)
 }
 
 // get deployed address for a contract from its networks object and current network id or null
-export async function getNetworkAddress (networks) {
+export async function getNetworkAddress(networks) {
   if (!networks[chainId] || !networks[chainId].address) return null
   return networks[chainId].address
 }
 
-export function getProvider () {
+export function getProvider() {
   return provider
 }
 
-export function getWallet () {
+export function getWallet() {
   return userWallet
 }
 
-export async function getWalletAddress () {
+export async function getWalletAddress() {
   const addr = userWallet && await userWallet.getAddress()
   return addr
 }
 
-export function ready () {
+export function ready() {
   return !!provider && !!userWallet
 }
 
-export async function startProviderWatcher () {
+export async function startProviderWatcher() {
   // this should only be run when a ethereum provider is detected and set at the ethereum value above
-  async function updateProvider () {
-    ethereum = getEthereum()
-    if (!ethereum) return
-    // set ethers provider
-    provider = new providers.Web3Provider(ethereum)
-    initialized = true
+  async function updateProvider() {
+    try {
+      ethereum = getEthereum()
+      if (!ethereum) return
+      // set ethers provider
+      provider = new providers.Web3Provider(ethereum)
+      initialized = true
 
-    // this is modeled after EIP-1193 example provided by MetaMask for clarity and consistency
-    // but works for all EIP-1193 compatible ethereum providers
-    // https://docs.metamask.io/guide/ethereum-provider.html#using-the-provider
+      // this is modeled after EIP-1193 example provided by MetaMask for clarity and consistency
+      // but works for all EIP-1193 compatible ethereum providers
+      // https://docs.metamask.io/guide/ethereum-provider.html#using-the-provider
 
-    /**********************************************************/
-    /* Handle chain (network) and chainChanged (per EIP-1193) */
-    /**********************************************************/
+      /**********************************************************/
+      /* Handle chain (network) and chainChanged (per EIP-1193) */
+      /**********************************************************/
 
-    // Normally, we would recommend the 'eth_chainId' RPC method, but it currently
-    // returns incorrectly formatted chain ID values.
-    chainId = ethereum.chainId
+      // Normally, we would recommend the 'eth_chainId' RPC method, but it currently
+      // returns incorrectly formatted chain ID values.
+      chainId = ethereum.chainId
 
-    ethereum.on('chainChanged', handleChainChanged)
+      ethereum.on('chainChanged', handleChainChanged)
 
-    /***********************************************************/
-    /* Handle user accounts and accountsChanged (per EIP-1193) */
-    /***********************************************************/
+      /***********************************************************/
+      /* Handle user accounts and accountsChanged (per EIP-1193) */
+      /***********************************************************/
 
-    ethereum
-      .request({ method: 'eth_accounts' })
-      .then(handleAccountsChanged)
-      .catch((err) => {
-        // Some unexpected error.
-        // For backwards compatibility reasons, if no accounts are available,
-        // eth_accounts will return an empty array.
-        console.error('Error requesting ethereum accounts', err)
-        event.$emit(EVENT_CHANNEL, MSGS.NO_WALLET)
-      })
-
-    // Note that this event is emitted on page load.
-    // If the array of accounts is non-empty, you're already
-    // connected.
-    ethereum.on('accountsChanged', handleAccountsChanged)
+      const accounts = await ethereum.request({ method: 'eth_accounts' })
+      await handleAccountsChanged(accounts)
+      // Note that this event is emitted on page load.
+      // If the array of accounts is non-empty, you're already
+      // connected.
+      ethereum.on('accountsChanged', handleAccountsChanged)
+    } catch (err) {
+      // Some unexpected error.
+      // For backwards compatibility reasons, if no accounts are available,
+      // eth_accounts will return an empty array.
+      console.error('Error requesting ethereum accounts', err)
+      event.$emit(EVENT_CHANNEL, MSGS.NO_WALLET)
+    }
   }
 
-  function checkProvider () {
+  function checkProvider() {
     // handle changes of availability of ethereum provider
     if (ethereum && !ethereumOk()) {
       ethereum = null
@@ -168,18 +165,19 @@ export async function startProviderWatcher () {
   // kick it off now
   checkProvider()
   // and set interval
-  providerInterval = setInterval(checkProvider, ACCOUNT_CHECK_MS)
+  providerInterval = setInterval(checkProvider, PROVIDER_CHECK_MS)
 }
 
-function handleChainChanged (_chainId) {
+function handleChainChanged(_chainId) {
   // We recommend reloading the page, unless you must do otherwise
   console.log('Ethereum chain changed. Reloading as recommended.')
   chainId = _chainId
+  alert('Ethereum chain has changed. We will reload the page as recommended.')
   window.location.reload()
 }
 
 // For now, 'eth_accounts' will continue to always return an array
-function handleAccountsChanged (accounts) {
+function handleAccountsChanged(accounts) {
   if (accounts.length === 0) {
     // MetaMask is locked or the user has not connected any accounts
     console.log('No ethereum accounts available')
@@ -202,27 +200,27 @@ function handleAccountsChanged (accounts) {
 // to initiate the attempt.
 // document.getElementById('connectButton', connect)
 
-export function connect () {
-  if (!ethereum) return event.$emit(EVENT_CHANNEL, MSGS.NOT_CONNECTED)
-  ethereum
-    .request({ method: 'eth_requestAccounts' })
-    .then(handleAccountsChanged)
-    .catch((err) => {
-      if (err.code === 4001) {
-        // EIP-1193 userRejectedRequest error
-        // If this happens, the user rejected the connection request.
-        console.log('Please connect to Ethereum wallet')
-        event.$emit(EVENT_CHANNEL, MSGS.NOT_READY)
-      } else {
-        console.error('Error requesting Ethereum connection/accounts', err)
-        event.$emit(EVENT_CHANNEL, MSGS.NOT_READY)
-      }
-      event.$emit(EVENT_CHANNEL, MSGS.ACCOUNT_CHANGED)
-    })
+export async function connect() {
+  try {
+    if (!ethereum) return event.$emit(EVENT_CHANNEL, MSGS.NOT_CONNECTED)
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
+    await handleAccountsChanged(accounts)
+    await event.$emit(EVENT_CHANNEL, MSGS.ACCOUNT_CHANGED)
+  } catch (err) {
+    if (err.code === 4001) {
+      // EIP-1193 userRejectedRequest error
+      // If this happens, the user rejected the connection request.
+      console.log('Please connect to Ethereum wallet')
+      event.$emit(EVENT_CHANNEL, MSGS.NOT_READY, err)
+    } else {
+      console.error('Error requesting Ethereum connection/accounts', err)
+      event.$emit(EVENT_CHANNEL, MSGS.NOT_READY, err)
+    }
+  }
 }
 
 // stop interval looking for ethereum provider changes
-export async function stopWatchProvider () {
+export async function stopWatchProvider() {
   if (providerInterval) clearInterval(providerInterval)
   providerInterval = null
 }

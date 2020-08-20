@@ -25,31 +25,29 @@ These state variables are kept updated:
 
 ### Example code
 This plugin comes with the following example code enabled so you can see how this module works. Replace the example code with your own application logic.
-* In the store actions, look for the ```alert``` statements. These will alert the state of the ethereum connection and account changes in the browser.
+* In the store module, search for the `alert` and `confirm` statements. These will alert the state of the ethereum connection and account changes in the browser.
 * By default ethersConnect.js is set to log each block of the blockchain in the console. Review the code comments to see how to easily extend or disable this.
 
 ### Usage
 
 * See [Vuex Getting Started](https://vuex.vuejs.org/guide/) for general information.
-* You either
-  * do not yet have a root store file already,
-  * or if you do in that file
-    *  your store is called ```store ```,
-    * you have a ```modules``` section in your store,
-    * and you have an ```export```. These are needed to correctly augment the root store with the ethers module code.
+* This plug expects you to have a file `main.js` in your `src` folder according to vue-cli standard.
+* It also expects you to have already added Vuex to your project before adding this plugin.
+* And that
+  * your store is called ```store ```,
+  * you have a ```modules``` section in your store,
+  * and you have an ```export```. These are needed to correctly augment the root store with the ethers module code.
 
 
 - Install via vue-cli
 
 ```sh
 $ vue add ethers
-? Where is the root directory of your store? ./src/store
-? What would you like to name the module? ethers
 ```
 
 
 ### Interacting with contracts
-Read about how to do this in the [ethers.js contract documentation](https://docs.ethers.io/ethers.js/html/api-contract.html).
+Read about how to do this in the [ethers.js contract documentation](https://docs.ethers.io/v5/api/contract/contract/).
 
 ### Contributions
 Pull requests welcome!

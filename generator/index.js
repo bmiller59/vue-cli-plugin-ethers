@@ -2,15 +2,13 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = (api, options, rootOptions) => {
-  const {
-    moduleName,
-    storeRootDir,
-    mainJsDir
-  } = options;
+  // const {} = options;
+  const moduleName = 'ethers'
+  const storeRootDir = 'store'
   const templatesRoot = './templates';
-  const moduleDirPath = path.join(storeRootDir, moduleName);
-  const storeRootPath = path.join(storeRootDir, 'index.js');
-  const mainJsPath = path.join(mainJsDir, 'main.js');
+  const moduleDirPath = path.join('./src', storeRootDir, moduleName);
+  const storeRootPath = path.join('./src', storeRootDir, 'index.js');
+  const mainJsPath = path.join('./src/main.js');
 
   // Abort if module already exists
   if (fs.existsSync(moduleDirPath)) {
@@ -83,6 +81,7 @@ module.exports = (api, options, rootOptions) => {
     // augment main.js to init ethers store
     let contentMain = fs.readFileSync(mainJsPath, { encoding: 'utf-8' })
     const linesMain = contentMain.split(/\r?\n/g)
+
     linesMain.push('\n// Initialize ethers store')
     linesMain.push(`store.dispatch('ethers/init')\n`)
     contentMain = linesMain.join('\n')
