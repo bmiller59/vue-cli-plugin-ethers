@@ -1,7 +1,7 @@
 {
   "name": "vue-cli-plugin-ethers",
   "description": "Ethereum ethers.js vuex store module generator plugin for vue-cli 3. Build dapps!",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "main": "index.js",
   "repository": {
     "type": "git",
