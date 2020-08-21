@@ -31,12 +31,14 @@ This plugin comes with the following example code enabled so you can see how thi
 ### Usage
 
 * See [Vuex Getting Started](https://vuex.vuejs.org/guide/) for general information.
-* This plug expects you to have a file `main.js` in your `src` folder according to vue-cli standard.
+* This plugin expects you to have a file `main.js` in your `src` folder according to vue-cli standard.
 * It also expects you to have already added Vuex to your project before adding this plugin.
 * And that
-  * your store is called ```store ```,
-  * you have a ```modules``` section in your store,
-  * and you have an ```export```. These are needed to correctly augment the root store with the ethers module code.
+  * your store folder is called ```store ``` with an `index.js` in it,
+  * you have a ```modules``` section in your store `index.js`,
+  * and you have an ```export``` in your store `index.js` file.
+
+These are needed to correctly augment the root store with the ethers module code.
 
 
 - Install via vue-cli
