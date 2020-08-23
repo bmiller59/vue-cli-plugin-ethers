@@ -30,7 +30,7 @@ This plugin comes with the following example code enabled so you can see how thi
 
 ### Usage
 
-* See [Vuex Getting Started](https://vuex.vuejs.org/guide/) for general information.
+* See [Vuex Getting Started](https://vuex.vuejs.org/guide/) for general information about Vuex.
 * This plugin expects you to have a file `main.js` in your `src` folder according to vue-cli standard.
 * It also expects you to have already added Vuex to your project before adding this plugin.
 * And that
@@ -38,10 +38,30 @@ This plugin comes with the following example code enabled so you can see how thi
   * you have a ```modules``` section in your store `index.js`,
   * and you have an ```export``` in your store `index.js` file.
 
+For example, the standard store created by `vue add vuex`, with a modules section added, will work:
+
+```
+import Vue from 'vue'
+import Vuex from 'vuex'
+
+Vue.use(Vuex)
+
+export default new Vuex.Store({
+  state: {
+  },
+  mutations: {
+  },
+  actions: {
+  },
+  modules: {
+  }
+})
+```
+
 These are needed to correctly augment the root store with the ethers module code.
 
 
-- Install via vue-cli
+### Install via vue-cli
 
 ```sh
 $ vue add ethers
